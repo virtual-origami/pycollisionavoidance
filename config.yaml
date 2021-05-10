@@ -1,0 +1,337 @@
+scene:
+  render:
+      workspace_render:
+        - ws_render_1: &ws_render_1
+            dimensions: [ 800, 1000 ]
+            grid_size: 1
+            color: [ 255,255,255 ]
+            type: "2D"
+      obstacle_render:
+        - block: &block
+            type: "static"
+            color: [ 0,0,0 ]
+            shape: "polygon"
+        - wall: &wall
+            type: "static"
+            color: [ 0,0,0 ]
+            shape: "line"
+      robot_render:
+        - robot_1: &robot_1
+            color: [ 0,0,0 ]
+            base_width: 10
+            joint_width: 5
+            arm_width: 8
+      particle_render:
+        - particle_1: &particle_1
+            color: [ 255,0,0 ]
+            size: 5
+      attributes: &attributes
+          scaling: 5
+          interval: 0.1
+  obstacles_1: &obstacles_1
+    - id: '1'
+      description: "wall-1"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 0,0 ]
+        - [ 0,2 ]
+        - [ 160,2 ]
+        - [ 160,0 ]
+    - id: '2'
+      description: "wall-2"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 0,200 ]
+        - [ 0,198 ]
+        - [ 160,198 ]
+        - [ 160,200 ]
+    - id: '3'
+      description: "wall-3"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 158,2 ]
+        - [ 160,2 ]
+        - [ 160,198 ]
+        - [ 158,198 ]
+    - id: '4'
+      description: "wall-4"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 0,2 ]
+        - [ 2,2 ]
+        - [ 2,198 ]
+        - [ 0,198 ]
+    - id: '5'
+      description: "wall-5"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 60,2 ]
+        - [ 62,2 ]
+        - [ 62,60 ]
+        - [ 60,60 ]
+    - id: '6'
+      description: "wall-6"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 60,70 ]
+        - [ 62,70 ]
+        - [ 62,100 ]
+        - [ 60,100 ]
+    - id: '7'
+      description: "wall-7"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 0,100 ]
+        - [ 0,102 ]
+        - [ 60,102 ]
+        - [ 60,100 ]
+    - id: '8'
+      description: "wall-8"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 60,100 ]
+        - [ 62,100 ]
+        - [ 62,160 ]
+        - [ 60,160 ]
+    - id: '9'
+      description: "wall-9"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 60,170 ]
+        - [ 62,170 ]
+        - [ 62,198 ]
+        - [ 60,198 ]
+    - id: '10'
+      description: "wall-10"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 100,2 ]
+        - [ 102,2 ]
+        - [ 102,60 ]
+        - [ 100,60 ]
+    - id: '11'
+      description: "wall-11"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 100,70 ]
+        - [ 102,70 ]
+        - [ 102,100 ]
+        - [ 100,100 ]
+    - id: '12'
+      description: "wall-12"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 100,100 ]
+        - [ 102,100 ]
+        - [ 102,160 ]
+        - [ 100,160 ]
+    - id: '13'
+      description: "wall-13"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 100,170 ]
+        - [ 102,170 ]
+        - [ 102,198 ]
+        - [ 100,198 ]
+    - id: '14'
+      description: "wall-14"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 100,100 ]
+        - [ 100,102 ]
+        - [ 160,102 ]
+        - [ 160,100 ]
+  obstacles_2: &obstacles_2
+    - id: '1'
+      description: "wall-1"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 0,0 ]
+        - [ 0,2 ]
+        - [ 100,2 ]
+        - [ 100,0 ]
+    - id: '2'
+      description: "wall-2"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 0,0 ]
+        - [ 2,0 ]
+        - [ 2,100 ]
+        - [ 0,100 ]
+    - id: '3'
+      description: "wall-3"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 0,100 ]
+        - [ 0,98 ]
+        - [ 100,98 ]
+        - [ 100,100 ]
+    - id: '4'
+      description: "wall-4"
+      render: *block
+      attributes: *attributes
+      points:
+        - [ 98,0 ]
+        - [ 100,0 ]
+        - [ 100,100 ]
+        - [ 98,100 ]
+  robots: &robots
+    - id: "1"
+      render: *robot_1
+      attributes: *attributes
+      base: { x: 20.0, y: 20.0 }
+    - id: "2"
+      render: *robot_1
+      attributes: *attributes
+      base: { x: 50.0, y: 50.0 }
+    - id: "3"
+      render: *robot_1
+      attributes: *attributes
+      base: { x: 80.0, y: 20.0 }
+  workspaces:
+    - workspace_1: &workspace_1
+        id: 1
+        render: *ws_render_1
+        obstacles: *obstacles_2
+        robots: *robots
+walk_generator:
+  version: "0.1"
+  attribute: &attribute
+    walk:
+      enable_collision: True
+      max_walk_speed: 10
+      direction_factor: 0.5
+      distance_factor: 0.7
+      angle_deviation_factor: 2
+      walk_dimension: 2
+      sigmoid_attributes:
+        mid_point: 0
+        steepness: 0.5
+        min_angle: 45
+        max_angle: 135
+    positioning:
+      outliers:
+        x:
+          mean: 0
+          standard_deviation: 2
+          number_of_outlier: 20
+          sample_size: 100
+        y:
+          mean: 0
+          standard_deviation: 2
+          number_of_outlier: 20
+          sample_size: 100
+        z:
+          mean: 0
+          standard_deviation: 0.5
+          number_of_outlier: 20
+          sample_size: 100
+    motion:
+      acceleration:
+        initial: { x: 0, y: 0, z: 0 }
+        outliers:
+          x:
+            mean: 0
+            standard_deviation: 0.1
+            number_of_outlier: 100
+            sample_size: 100
+          y:
+            mean: 0
+            standard_deviation: 0.1
+            number_of_outlier: 100
+            sample_size: 100
+          z:
+            mean: 0
+            standard_deviation: 0.1
+            number_of_outlier: 100
+            sample_size: 100
+      velocity:
+        initial: { x: 0, y: 0, z: 0 }
+      orientation:
+        initial: { roll: 0, pitch: 0, yaw: 0 }
+    collision:
+      distance:
+        environment: 5
+        robot: 10
+    interval: 0.05 # 100Hz
+  amq: # AMQP Broker Information
+    broker: &amq_connect_info
+      address: "localhost"
+      port: 5672
+    credentials: &amq_credential
+      username: "admin"
+      password: "rabbit"
+  pub_sub:
+    - pub_sub_1: &pub_sub_1
+        type: "amq"
+        broker: *amq_connect_info
+        credential: *amq_credential
+        exchange: "telemetry_exchange"
+        binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
+          - "telemetry.walker."
+    - pub_sub_2: &pub_sub_2
+        type: "amq"
+        broker: *amq_connect_info
+        credential: *amq_credential
+        exchange: "db_exchange"
+        binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
+          - "db.walker."
+    - pub_sub_3: &pub_sub_3
+        type: "amq"
+        broker: *amq_connect_info
+        credential: *amq_credential
+        exchange: "telemetry_exchange"
+        binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
+          - "telemetry.robot."
+    - pub_sub_4: &pub_sub_4
+        type: "amq"
+        broker: *amq_connect_info
+        credential: *amq_credential
+        exchange: "control_exchange"
+        binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
+          - "control.robot."
+    - pub_sub_5: &pub_sub_5
+        type: "amq"
+        broker: *amq_connect_info
+        credential: *amq_credential
+        exchange: "telemetry_exchange"
+        binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
+          - "telemetry.pls."
+  personnel:
+    - id: '1'
+      height: 1.6
+      walk_boundary: 100
+      attribute: *attribute
+      start_coordinates: { x: 47, y: 80, z: 0}
+      workspace: *workspace_1
+      protocol:
+        publishers:
+          - *pub_sub_4
+        subscribers:
+          - *pub_sub_3
+          - *pub_sub_5
+
+
+
+
+
+
+
+
