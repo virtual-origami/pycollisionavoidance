@@ -40,8 +40,9 @@ class Particle:
         :param y: y coordinate of the particle
         :return:
         """
-        self.pos.x = x
-        self.pos.y = y
+        if x is not None and y is not None:
+            self.pos.x = x
+            self.pos.y = y
 
     def look(self,segments):
         """
@@ -50,29 +51,30 @@ class Particle:
         :return:
         """
         result = []
-        for ray in self.rays:
-            closest_obstacle = None
-            closest_distance = None
-            contact_point = None
-            for obstacle in segments:
-                pt = ray.cast(obstacle)
-                if pt is not None:
-                    distance = abs(math.sqrt(((self.pos.x - pt.x) ** 2) + ((self.pos.y - pt.y) ** 2)))
-                    if closest_obstacle is None:
-                        closest_obstacle = obstacle
-                        closest_distance = distance
-                        contact_point = pt
-                    else:
-                        if distance < closest_distance:
+        if self.pos.x is not None and self.pos.y is not None:
+            for ray in self.rays:
+                closest_obstacle = None
+                closest_distance = None
+                contact_point = None
+                for obstacle in segments:
+                    pt = ray.cast(obstacle)
+                    if pt is not None:
+                        distance = abs(math.sqrt(((self.pos.x - pt.x) ** 2) + ((self.pos.y - pt.y) ** 2)))
+                        if closest_obstacle is None:
                             closest_obstacle = obstacle
                             closest_distance = distance
                             contact_point = pt
-            result.append({
-                'contact_point':[contact_point.x,contact_point.y]if contact_point is not None else None,
-                "angle":ray.angle,
-                "obstacle":closest_obstacle.description if closest_obstacle is not None else None,
-                "distance":closest_distance
-            })
+                        else:
+                            if distance < closest_distance:
+                                closest_obstacle = obstacle
+                                closest_distance = distance
+                                contact_point = pt
+                result.append({
+                    'contact_point':[contact_point.x,contact_point.y]if contact_point is not None else None,
+                    "angle":ray.angle,
+                    "obstacle":closest_obstacle.description if closest_obstacle is not None else None,
+                    "distance":closest_distance
+                })
         return result
 
     def look_at_angle(self,segments,start_angle,stop_angle):
@@ -84,24 +86,25 @@ class Particle:
         :return:
         """
         result = []
-        for ray in self.rays:
-            if start_angle <= ray.angle <= stop_angle:
-                closest_obstacle = None
-                closest_distance = None
-                for obstacle in segments:
-                    pt = ray.cast(obstacle)
-                    if pt is not None:
-                        distance = abs(math.sqrt(((self.pos.x - pt.x) ** 2) + ((self.pos.y - pt.y) ** 2)))
-                        if closest_obstacle is None:
-                            closest_obstacle = obstacle
-                            closest_distance = distance
-                        else:
-                            if distance < closest_distance:
+        if self.pos.x is not None and self.pos.y is not None:
+            for ray in self.rays:
+                if start_angle <= ray.angle <= stop_angle:
+                    closest_obstacle = None
+                    closest_distance = None
+                    for obstacle in segments:
+                        pt = ray.cast(obstacle)
+                        if pt is not None:
+                            distance = abs(math.sqrt(((self.pos.x - pt.x) ** 2) + ((self.pos.y - pt.y) ** 2)))
+                            if closest_obstacle is None:
                                 closest_obstacle = obstacle
                                 closest_distance = distance
-            result.append({
-                "angle":ray.angle,
-                "obstacle":closest_obstacle.description if closest_obstacle is not None else None,
-                "distance":closest_distance
-            })
+                            else:
+                                if distance < closest_distance:
+                                    closest_obstacle = obstacle
+                                    closest_distance = distance
+                result.append({
+                    "angle":ray.angle,
+                    "obstacle":closest_obstacle.description if closest_obstacle is not None else None,
+                    "distance":closest_distance
+                })
         return result

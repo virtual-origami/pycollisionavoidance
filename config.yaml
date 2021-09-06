@@ -211,7 +211,8 @@ scene:
         render: *ws_render_1
         obstacles: *obstacles_2
         robots: *robots
-walk_generator:
+        update_interval: 0.05 # 100Hz
+collision_avoidance:
   version: "0.1"
   attribute: &attribute
     walk:
@@ -270,7 +271,6 @@ walk_generator:
       distance:
         environment: 5
         robot: 10
-    interval: 0.05 # 100Hz
   amq: # AMQP Broker Information
     broker: &amq_connect_info
       address: "localhost"
@@ -279,54 +279,51 @@ walk_generator:
       username: "admin"
       password: "rabbit"
   pub_sub:
-    - pub_sub_1: &pub_sub_1
+    - pub_sub_1: &sub_plm
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
-        exchange: "telemetry_exchange"
+        exchange: "plm_walker"
         binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
-          - "telemetry.walker."
-    - pub_sub_2: &pub_sub_2
+          - "plm.walker."
+    - pub_sub_2: &pub_visual
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
-        exchange: "db_exchange"
+        exchange: "visual"
         binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
-          - "db.walker."
-    - pub_sub_3: &pub_sub_3
+          - "visual.avoidance."
+    - pub_sub_3: &sub_rmt_robot
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
-        exchange: "telemetry_exchange"
+        exchange: "rmt_robot"
         binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
-          - "telemetry.robot."
-    - pub_sub_4: &pub_sub_4
+          - "rmt.robot."
+    - pub_sub_4: &pub_control_robot
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
-        exchange: "control_exchange"
+        exchange: "control_robot"
         binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
           - "control.robot."
-    - pub_sub_5: &pub_sub_5
-        type: "amq"
-        broker: *amq_connect_info
-        credential: *amq_credential
-        exchange: "telemetry_exchange"
-        binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
-          - "telemetry.pls."
-  personnel:
-    - id: '1'
-      height: 1.6
-      walk_boundary: 100
-      attribute: *attribute
-      start_coordinates: { x: 47, y: 80, z: 0}
-      workspace: *workspace_1
+  workareas:
+    - workspace: *workspace_1
       protocol:
         publishers:
-          - *pub_sub_4
+          - *pub_control_robot
         subscribers:
-          - *pub_sub_3
-          - *pub_sub_5
+          - *sub_rmt_robot
+          - *sub_plm
+      personnels:
+        - attribute: *attribute
+
+#        - id: '1'
+##          height: 1.6
+##          walk_boundary: 100
+#          attribute: *attribute
+##          start_coordinates: { x: 47, y: 80, z: 0}
+
 
 
 

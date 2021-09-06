@@ -6,7 +6,7 @@ import sys
 import signal
 import functools
 import yaml
-from collision.Avoidance import Avoidance
+from collision.Avoidance import CollisionAvoidance
 
 logging.basicConfig(level=logging.WARNING, format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s')
 
@@ -24,7 +24,8 @@ is_sighup_received = False
 def parse_arguments():
     """Arguments to run the script"""
     parser = argparse.ArgumentParser(description='Collision Avoidance')
-    parser.add_argument('--config', '-c', required=True, help='YAML Configuration File for Collision Avoidance with path')
+    parser.add_argument('--config', '-c', required=True, help= 'YAML Configuration File for Collision Avoidance with path')
+    parser.add_argument('--id', '-i', required=True, help='Personnel ID ')
     return parser.parse_args()
 
 
@@ -33,15 +34,15 @@ def signal_handler(name):
     is_sighup_received = True
 
 
-async def app(eventloop, config):
+async def app(eventloop, config, personnel_id):
     """Main application for Personnel Generator"""
-    walkers_in_ws = []
+    workspace_collection = []
     global is_sighup_received
 
     while True:
         # Read configuration
         try:
-            walk_config = read_config(yaml_file=config, rootkey='walk_generator')
+            walk_config = read_config(yaml_file=config, rootkey='collision_avoidance')
         except Exception as e:
             logger.error(f'Error while reading configuration: {e}')
             break
@@ -54,25 +55,18 @@ async def app(eventloop, config):
             sys.exit(-1)
 
         # Personnel instantiation
-        for each_walker in walk_config["personnel"]:
-
-            # check for protocol key
-            if "protocol" not in each_walker:
-                logger.critical("no 'protocol' key found.")
-                sys.exit(-1)
-
-            # create walker
-            walker = Avoidance(eventloop=eventloop, config_file=each_walker)
-            await walker.connect()
-            walkers_in_ws.append(walker)
+        for workspace in walk_config["workareas"]:
+            ws = CollisionAvoidance(eventloop=eventloop, config_file=workspace, personnel_id= personnel_id)
+            await ws.connect()
+            workspace_collection.append(ws)
 
         # continuously monitor signal handle and update walker
         while not is_sighup_received:
-            for each_walker in walkers_in_ws:
-                await each_walker.update(binding_key="telemetry.walker")
+            for ws in workspace_collection:
+                await ws.update()
 
         # If SIGHUP Occurs, Delete the instances
-        for entry in walkers_in_ws:
+        for entry in workspace_collection:
             del entry
 
         # reset sighup handler flag
@@ -99,7 +93,7 @@ def main():
 
     event_loop = asyncio.get_event_loop()
     event_loop.add_signal_handler(signal.SIGHUP, functools.partial(signal_handler, name='SIGHUP'))
-    event_loop.run_until_complete(app(event_loop, args.config))
+    event_loop.run_until_complete(app(eventloop=event_loop, config=args.config, personnel_id =args.id))
 
 
 if __name__ == "__main__":
