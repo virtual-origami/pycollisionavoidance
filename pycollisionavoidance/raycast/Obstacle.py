@@ -1,7 +1,7 @@
 import logging
 import sys
 import traceback
-from .Point import LineSegment, Dot
+from pycollisionavoidance.raycast.Point import LineSegment, Dot
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

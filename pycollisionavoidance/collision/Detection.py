@@ -1,6 +1,5 @@
 import sys
 import time
-
 from pycollisionavoidance.raycast.Point import Point, LineSegment
 import logging
 

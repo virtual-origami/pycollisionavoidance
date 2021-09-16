@@ -1,7 +1,7 @@
 import logging
 import sys
-from .Obstacle import Obstacle
-from .Point import Point
+from pycollisionavoidance.raycast.Obstacle import Obstacle
+from pycollisionavoidance.raycast.Point import Point
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

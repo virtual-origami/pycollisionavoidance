@@ -6,7 +6,7 @@ import sys
 import signal
 import functools
 import yaml
-from collision.Avoidance import CollisionAvoidance
+from pycollisionavoidance.collision.Avoidance import CollisionAvoidance
 
 logging.basicConfig(level=logging.WARNING, format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s')
 

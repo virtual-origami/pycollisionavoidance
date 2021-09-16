@@ -1,5 +1,5 @@
 import sys
-from aio_pika import connect_robust,Message,DeliveryMode,ExchangeType,IncomingMessage
+from aio_pika import connect_robust, Message, DeliveryMode, ExchangeType, IncomingMessage
 from aio_pika import exceptions as aio_pika_exception
 import logging
 

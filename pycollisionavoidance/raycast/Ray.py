@@ -1,6 +1,6 @@
 import math
 import logging
-from .Point import Point
+from pycollisionavoidance.raycast.Point import Point
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
