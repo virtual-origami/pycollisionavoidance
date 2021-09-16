@@ -7,26 +7,39 @@ Python Package to avoid fatal collision between human and robot in virtual envir
 
 1. Create a Virtual Environment
    
-        $ virtualenv -m venv venv
-
+    ```bash
+   $ virtualenv -m venv venv
+   ```
+   
 2. Activate Virtual Environment
 
-        $ . venv/bin/activate 
+    ```bash
+    $ . venv/bin/activate 
+    ```
 
 3. Install the Dependencies
 
-        pip install -r requirements.txt
+    ```bash
+    $ pip install -r requirements.txt
+    ```
 
 4. Install `pycollisionavoidance` as python package for development:
 
-        pip install -e .
-
+    ```bash
+   $ pip install -e .
+   ```
+   
    This makes the `collision-avoidance` binary available as a CLI
 
 ### Usage
-Basic usage:
+Run `collision-avoidance` binary in command line:
 
-    $ collision-avoidance -c config.yaml
+- -c : Configuration file path
+- -i : ID of the personnel
+
+```bash
+$ collision-avoidance -c config.yaml -i <personnel-id>
+```
 
 ### Message Broker (RabbitMQ)
 
@@ -38,14 +51,20 @@ __NOTE__: The `rabbitmqtt` stack needs an external docker network called `iotsta
 
 1. To build Docker Images locally use:
 
-        docker build -t pycollisionavoidance .
+    ```bash
+    $ docker build -t pycollisionavoidance:<version> .
+    ```
 
 2. To run the Application along with the RabbitMQ Broker connect the container with the `iotstack` network using:
 
-        docker run --rm --network=iotstack pycollisionavoidance
-    
+    ```bash
+    $ docker run --rm --network=iotstack -t pycollisionavoidance:<version> -c config.yaml -i <personnel-id>
+    ```
+
     __INFO__: Change the broker address in the `config.yaml` file to `rabbitmq` (name of the RabbitMQ Container in _rabbitmqtt_ stack)
 
 3. To run the a custom configuration for the Container use:
 
-        docker run --rm -v $(pwd)/config.yaml:/pycollisionavoidance/config.yaml --network=iotstack pycollisionavoidance
+    ```bash
+    $ docker run --rm -v $(pwd)/config.yaml:/pycollisionavoidance/config.yaml --network=iotstack -t pycollisionavoidance:<version> -c config.yaml -i <personnel-id>
+    ```
