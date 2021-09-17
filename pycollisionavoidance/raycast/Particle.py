@@ -16,15 +16,13 @@ class Particle:
     """
     This class implements the Particle representing a personnel as point
     """
-    def __init__(self,particle_id,x,y,size_in_pixel=1):
+    def __init__(self,x,y,size_in_pixel=1):
         """
         Initializes the particle
-        :param particle_id: particle id
         :param x: x cordinates of the particle
         :param y: y coordinate of the particle
         :param size_in_pixel: size of the particle in pixels
         """
-        self.id = particle_id
         self.pos = Point(x=x,y=y)
         self.size_in_pixel = size_in_pixel
         self.rays = []

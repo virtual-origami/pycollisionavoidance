@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import pycollisionavoidance.cli
+from pycollisionavoidance.cli import app_main
 
 if __name__ == "__main__":
-    pycollisionavoidance.cli.main()
+    app_main()

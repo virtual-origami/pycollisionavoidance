@@ -4,8 +4,11 @@ import sys
 import random
 import time
 import math
+import queue
 import logging
 import asyncio
+import traceback
+
 from pycollisionavoidance.pub_sub.AMQP import PubSubAMQP
 from pycollisionavoidance.raycast.Particle import Particle
 from pycollisionavoidance.raycast.StaticMap import StaticMap
@@ -23,7 +26,7 @@ logger.addHandler(handler)
 # ========================================= WALK PATTERN GENERATOR ===================================================
 
 class CollisionAvoidance:
-    def __init__(self, eventloop, config_file, personnel_id):
+    def __init__(self, eventloop, config_file):
         """
         Initialize Collision Avoidance
         :param eventloop: event loop for amqp pub sub
@@ -31,10 +34,10 @@ class CollisionAvoidance:
         """
         try:
             self.workspace_attributes = config_file["workspace"]
-            self.walkers_in_ws = []
-            self.interval = self.workspace_attributes["update_interval"]
             self.publishers = []
             self.subscribers = []
+            self.robot_msg_queue = queue.SimpleQueue()
+            self.personnel_msg_queue = queue.SimpleQueue()
 
             protocol = config_file["protocol"]
             # check for protocol key
@@ -43,24 +46,15 @@ class CollisionAvoidance:
                 sys.exit(-1)
 
             # Personnel instantiation
-            for each_walker in config_file["personnels"]:
-                # create walker
-                walker_id = personnel_id
-                # walker_id = each_walker["id"]
-                # pos = {'x': each_walker["start_coordinates"]["x"],
-                #        'y': each_walker["start_coordinates"]["y"],
-                #        'z': each_walker["start_coordinates"]["z"]}
-                pos = {'x': None, 'y': None, 'z': None}
-                env_collision_distance = each_walker["attribute"]["collision"]["distance"]["environment"]
-                robot_collision_distance = each_walker["attribute"]["collision"]["distance"]["robot"]
+            pos = {'x': None, 'y': None, 'z': None}
+            env_collision_distance = config_file["personnel"]["attribute"]["collision"]["distance"]["environment"]
+            robot_collision_distance = config_file["personnel"]["attribute"]["collision"]["distance"]["robot"]
 
-                # Collision detection
-                walker = ParticleCollisionDetection(scene=StaticMap(config_file=self.workspace_attributes),
-                                                    particle=Particle(particle_id=walker_id, x=pos["x"], y=pos["y"]),
-                                                    env_collision_distance=env_collision_distance,
-                                                    robot_collision_distance=robot_collision_distance)
-
-                self.walkers_in_ws.append(walker)
+            # Collision detection
+            self.walker_in_ws = ParticleCollisionDetection(scene=StaticMap(config_file=self.workspace_attributes),
+                                                           particle=Particle(x=pos["x"], y=pos["y"]),
+                                                           env_collision_distance=env_collision_distance,
+                                                           robot_collision_distance=robot_collision_distance)
 
             # Publisher
             if protocol["publishers"] is not None:
@@ -108,24 +102,68 @@ class CollisionAvoidance:
         :return:
         """
         try:
-            for walker in self.walkers_in_ws:
-                if self.interval >= 0:
-                    await walker.update(tdelta=self.interval)
-                else:
-                    await walker.update()
+            await self.robot_update()
+            await self.personnel_update()
+        except Exception as e:
+            logger.critical("unhandled exception", e)
+            sys.exit(-1)
+
+    async def personnel_update(self):
+        """
+        update walk generator.
+        Note This function need to be called in a loop every update cycle
+        :return:
+        """
+        try:
+            if not self.personnel_msg_queue.empty():
+                new_message = self.personnel_msg_queue.get_nowait()
+                self.walker_in_ws.update_particles(x=new_message["x_est_pos"],
+                                                   y=new_message["y_est_pos"])
+                await self.walker_in_ws.update()
 
                 # collision avoidance
-                if len(walker.robot_collision) > 0:
-                    for msg in walker.robot_collision:
+                if len(self.walker_in_ws.robot_collision) > 0:
+                    collision_robot_list = list({v['id']: v for v in self.walker_in_ws.robot_collision}.values())
+                    for msg in collision_robot_list:
                         await self.publish(exchange_name="control_robot",
-                                           msg=json.dumps(msg).encode(),
-                                           external_binding_suffix=msg["id"])
+                                           msg=json.dumps(msg).encode())
+        except Exception as e:
+            logger.critical("unhandled exception", e)
+            sys.exit(-1)
 
-            # sleep until its time for next sample
-            if self.interval >= 0:
-                await asyncio.sleep(delay=self.interval)
-            else:
-                await asyncio.sleep(delay=0)
+    async def robot_update(self):
+        try:
+            if not self.robot_msg_queue.empty():
+                new_message = self.robot_msg_queue.get_nowait()
+
+                # extract information from message body
+                base_shoulder = [new_message["base"], new_message["shoulder"]]
+                shoulder_elbow = [new_message["shoulder"], new_message["elbow"]]
+                elbow_wrist = [new_message["elbow"], new_message["wrist"]]
+                prefix = "robot_" + new_message["id"]
+
+                # update robot in scene for collision detection
+                # logger.debug(f'sub: exchange {exchange_name}: msg {message_body}')
+
+                # center_x = new_message["base"][0]
+                # center_y = new_message["base"][1]
+                # base_points = [[center_x - 2, center_y - 2],
+                #           [center_x + 2, center_y - 2],
+                #           [center_x + 2, center_y + 2],
+                #           [center_x + 2, center_y - 2]]
+                # self.walker_in_ws.update_scene(obstacle_id=prefix + "_base",
+                #                                points=base_points,
+                #                                shape="polygon")
+
+                self.walker_in_ws.update_scene(obstacle_id=prefix + "_base_shoulder",
+                                               points=base_shoulder,
+                                               shape="line")
+                self.walker_in_ws.update_scene(obstacle_id=prefix + "_shoulder_elbow",
+                                               points=shoulder_elbow,
+                                               shape="line")
+                self.walker_in_ws.update_scene(obstacle_id=prefix + "_elbow_wrist",
+                                               points=elbow_wrist,
+                                               shape="line")
         except Exception as e:
             logger.critical("unhandled exception", e)
             sys.exit(-1)
@@ -133,7 +171,7 @@ class CollisionAvoidance:
     def get_states(self):
         return {"x_ref_pos": self.pos['x'], "y_ref_pos ": self.pos['y'], "z_ref_pos": self.pos['z']}
 
-    async def publish(self, exchange_name, msg, external_binding_suffix=None):
+    async def publish(self, exchange_name, msg):
         '''
         publishes amqp message
         :param exchange_name: name of amqp exchange
@@ -144,7 +182,7 @@ class CollisionAvoidance:
         try:
             for publisher in self.publishers:
                 if exchange_name == publisher.exchange_name:
-                    await publisher.publish(message_content=msg, external_binding_suffix=external_binding_suffix)
+                    await publisher.publish(message_content=msg)
                     logger.debug(f'pub: {msg}')
         except Exception as e:
             logger.critical("unhandled exception", e)
@@ -165,7 +203,28 @@ class CollisionAvoidance:
             logger.critical("unhandled exception", e)
             sys.exit(-1)
 
-    def _consume_telemetry_msg(self, **kwargs):
+    async def robot_msg_handler(self, exchange_name, binding_name, message_body):
+
+        msg_attributes = message_body.keys()
+
+        # check for must fields in the message attributes
+        if ("id" in msg_attributes) and ("base" in msg_attributes) \
+                and ("shoulder" in msg_attributes) and ("elbow" in msg_attributes):
+            self.robot_msg_queue.put_nowait(item=message_body)
+
+    async def personnel_msg_handler(self, exchange_name, binding_name, message_body):
+
+        msg_attributes = message_body.keys()
+        if ("id" in msg_attributes) and \
+                ("x_est_pos" in msg_attributes) and \
+                ("y_est_pos" in msg_attributes) and \
+                ("z_est_pos" in msg_attributes) and \
+                ("timestamp" in msg_attributes):
+
+            # logger.debug(f'sub: exchange {exchange_name}: msg {message_body}')
+            self.personnel_msg_queue.put_nowait(item=message_body)
+
+    async def _consume_telemetry_msg(self, **kwargs):
         """
         consume telemetry messages
         :param kwargs: must contain following information
@@ -174,59 +233,31 @@ class CollisionAvoidance:
                        3.   message_body
         :return: none
         """
-        # extract message attributes from message
-        exchange_name = kwargs["exchange_name"]
-        binding_name = kwargs["binding_name"]
-        message_body = json.loads(kwargs["message_body"])
+        try:
+            # extract message attributes from message
+            exchange_name = kwargs["exchange_name"]
+            binding_name = kwargs["binding_name"]
+            message_body = json.loads(kwargs["message_body"])
 
-        # check for matching subscriber with exchange and binding name in all subscribers
-        for subscriber in self.subscribers:
-            if subscriber.exchange_name == exchange_name:
-                if "rmt.robot." in binding_name:
-                    # extract robot id from binding name
-                    binding_delimited_array = binding_name.split(".")
-                    robot_id = binding_delimited_array[len(binding_delimited_array) - 1]
-                    msg_attributes = message_body.keys()
-
-                    # check for must fields in the message attributes
-                    if ("id" in msg_attributes) and ("base" in msg_attributes) \
-                            and ("shoulder" in msg_attributes) and ("elbow" in msg_attributes):
-
-                        # check if robot id matches with 'id' field in the message
-                        if robot_id == message_body["id"]:
-                            # extract information from message body
-                            base_shoulder = [message_body["base"], message_body["shoulder"]]
-                            shoulder_elbow = [message_body["shoulder"], message_body["elbow"]]
-                            elbow_wrist = [message_body["elbow"], message_body["wrist"]]
-                            prefix = "robot_" + message_body["id"]
-                            for walker in self.walkers_in_ws:
-                                # update robot in scene for collision detection
-                                walker.update_scene(obstacle_id=prefix + "_base_shoulder",
-                                                    points=base_shoulder,
-                                                    shape="line")
-                                walker.update_scene(obstacle_id=prefix + "_shoulder_elbow",
-                                                    points=shoulder_elbow,
-                                                    shape="line")
-                                walker.update_scene(obstacle_id=prefix + "_elbow_wrist",
-                                                    points=elbow_wrist,
-                                                    shape="line")
-                elif "plm.walker." in binding_name:
-                    # extract walker id
-                    binding_delimited_array = binding_name.split(".")
-                    walker_id = binding_delimited_array[len(binding_delimited_array) - 1]
-                    msg_attributes = message_body.keys()
-                    if ("id" in msg_attributes) and \
-                            ("x_est_pos" in msg_attributes) and \
-                            ("y_est_pos" in msg_attributes) and \
-                            ("z_est_pos" in msg_attributes) and \
-                            ("timestamp" in msg_attributes):
-                        for walker in self.walkers_in_ws:
-                            if walker.id == walker_id and walker_id == message_body["id"]:
-                                logger.debug(f'sub: exchange {exchange_name}: msg {message_body}')
-                                walker.update_particles(x=message_body["x_est_pos"],
-                                                        y=message_body["y_est_pos"])
-                                break
-                        else:
-                            return False  # robot id in binding name and message body does not match
-                    else:
-                        return False  # invalid message body format
+            # check for matching subscriber with exchange and binding name in all subscribers
+            for subscriber in self.subscribers:
+                # if subscriber.exchange_name == exchange_name:
+                cb_str = subscriber.get_callback_handler_name()
+                if cb_str is not None:
+                    try:
+                        cb = getattr(self, cb_str)
+                    except:
+                        logging.critical(f'No Matching handler found for {cb_str}')
+                        continue
+                    if cb is not None:
+                        await cb(exchange_name=exchange_name, binding_name=binding_name, message_body=message_body)
+        except AssertionError as e:
+            logging.critical(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            logging.critical(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+            sys.exit()
+        except Exception as e:
+            logging.critical(e)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            logging.critical(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
+            sys.exit()

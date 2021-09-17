@@ -41,12 +41,17 @@ class StaticMap:
                           Point(x=center_x + 2, y=center_y - 2),
                           Point(x=center_x + 2, y=center_y + 2),
                           Point(x=center_x + 2, y=center_y - 2)]
-                arm = points = [Point(x=center_x - 2, y=center_y - 2), Point(x=center_x + 2, y=center_y - 2)]
+                arm = [Point(x=center_x - 2, y=center_y - 2), Point(x=center_x + 2, y=center_y - 2)]
                 self.obstacles.append(Obstacle(id=obstacle["id"],
                                                corner_points=tuple(points),
                                                obstacle_shape='polygon',
                                                obstacle_type='static',
                                                description="robot_" + robot['id']))
+                # self.obstacles.append(Obstacle(id="robot_" + robot['id']+"_base",
+                #                                corner_points=tuple(points),
+                #                                obstacle_shape='polygon',
+                #                                obstacle_type='dynamic',
+                #                                description="robot_" + robot['id']+"_base"))
                 self.obstacles.append(Obstacle(id="robot_" + robot['id']+"_base_shoulder",
                                                corner_points=tuple(arm),
                                                obstacle_shape='line',

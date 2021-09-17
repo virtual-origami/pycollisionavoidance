@@ -28,7 +28,6 @@ class ParticleCollisionDetection:
         :param robot_collision_distance: robot (obstacle) collision distance
         """
         self.scene = scene
-        self.id = particle.id
         self.particle = particle
         self.views = None
         self.env_collision_distance = env_collision_distance
@@ -65,7 +64,7 @@ class ParticleCollisionDetection:
             for point in points:
                 corner_points.append(Point(x=point[0], y=point[1]))
             self.scene.update(obstacle_id=obstacle_id,
-                              corner_points=corner_points,
+                              corner_points=tuple(corner_points),
                               shape=shape)
 
     def get_environmental_collision_distance(self):
@@ -129,22 +128,6 @@ class ParticleCollisionDetection:
         :return:
         """
         try:
-            # calculate loop time
-            if tdelta > 0:
-                # valid time delta received as input paramter
-                timedelta = tdelta
-            elif self.time_now == 0 and self.time_past == 0:
-                # time delta calculation for first update cycle
-                self.time_now = time.time()
-                timedelta = self.interval
-            else:
-                # time delta calculation based on run time
-                self.time_now = time.time()
-                timedelta = self.time_now - self.time_past
-                self.time_past = self.time_now
-
-            assert (timedelta >= 0), f"Time delta: {timedelta},  can't be negative"
-
             # Calculate Walk angle for next step, and also check if walker is in collision course
             self.env_collision, self.robot_collision = self.ranging()
 

@@ -25,7 +25,6 @@ def parse_arguments():
     """Arguments to run the script"""
     parser = argparse.ArgumentParser(description='Collision Avoidance')
     parser.add_argument('--config', '-c', required=True, help= 'YAML Configuration File for Collision Avoidance with path')
-    parser.add_argument('--id', '-i', required=True, help='Personnel ID ')
     return parser.parse_args()
 
 
@@ -34,7 +33,7 @@ def signal_handler(name):
     is_sighup_received = True
 
 
-async def app(eventloop, config, personnel_id):
+async def app(eventloop, config):
     """Main application for Personnel Generator"""
     workspace_collection = []
     global is_sighup_received
@@ -48,6 +47,12 @@ async def app(eventloop, config, personnel_id):
             break
 
         logger.debug("Collision Avoidance Version: %s", walk_config['version'])
+        try:
+            update_interval = walk_config["update_interval"]
+            assert type(update_interval) is int or type(update_interval) is float
+        except Exception as e:
+            logger.error(f'Update interval need to be a number. Check config file {e}')
+            break
 
         # check if amq or mqtt key description present in configuration
         if ("amq" not in walk_config) and ("mqtt" not in walk_config):
@@ -56,7 +61,7 @@ async def app(eventloop, config, personnel_id):
 
         # Personnel instantiation
         for workspace in walk_config["workareas"]:
-            ws = CollisionAvoidance(eventloop=eventloop, config_file=workspace, personnel_id= personnel_id)
+            ws = CollisionAvoidance(eventloop=eventloop, config_file=workspace)
             await ws.connect()
             workspace_collection.append(ws)
 
@@ -64,7 +69,7 @@ async def app(eventloop, config, personnel_id):
         while not is_sighup_received:
             for ws in workspace_collection:
                 await ws.update()
-
+            await asyncio.sleep(delay=update_interval)
         # If SIGHUP Occurs, Delete the instances
         for entry in workspace_collection:
             del entry
@@ -84,7 +89,7 @@ def read_config(yaml_file, rootkey):
         logger.error('YAML Configuration File not Found.')
 
 
-def main():
+def app_main():
     """Initialization"""
     args = parse_arguments()
     if not os.path.isfile(args.config):
@@ -93,8 +98,5 @@ def main():
 
     event_loop = asyncio.get_event_loop()
     event_loop.add_signal_handler(signal.SIGHUP, functools.partial(signal_handler, name='SIGHUP'))
-    event_loop.run_until_complete(app(eventloop=event_loop, config=args.config, personnel_id =args.id))
+    event_loop.run_until_complete(app(eventloop=event_loop, config=args.config))
 
-
-if __name__ == "__main__":
-    main()

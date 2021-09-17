@@ -196,24 +196,28 @@ scene:
     - id: "1"
       render: *robot_1
       attributes: *attributes
-      base: { x: 20.0, y: 20.0 }
+      base: { x: 35.0, y: 50.0 }
     - id: "2"
       render: *robot_1
       attributes: *attributes
-      base: { x: 50.0, y: 50.0 }
-    - id: "3"
-      render: *robot_1
-      attributes: *attributes
-      base: { x: 80.0, y: 20.0 }
+      base: { x: 35.0, y: 120.0 }
+#    - id: "3"
+#      render: *robot_1
+#      attributes: *attributes
+#      base: { x: 130.0, y: 50.0 }
+#    - id: "4"
+#      render: *robot_1
+#      attributes: *attributes
+#      base: { x: 130.0, y: 120.0 }
   workspaces:
     - workspace_1: &workspace_1
         id: 1
         render: *ws_render_1
         obstacles: *obstacles_2
         robots: *robots
-        update_interval: 0.05 # 100Hz
 collision_avoidance:
   version: "0.1"
+  update_interval: 0.1
   attribute: &attribute
     walk:
       enable_collision: True
@@ -270,10 +274,10 @@ collision_avoidance:
     collision:
       distance:
         environment: 5
-        robot: 10
+        robot: 50
   amq: # AMQP Broker Information
     broker: &amq_connect_info
-      address: "rabbitmq"
+      address: "localhost"
       port: 5672
     credentials: &amq_credential
       username: "admin"
@@ -284,29 +288,29 @@ collision_avoidance:
         broker: *amq_connect_info
         credential: *amq_credential
         exchange: "plm_walker"
-        binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
-          - "plm.walker."
+        queue: "plm_walker_rk"
+        handler: "personnel_msg_handler"
     - pub_sub_2: &pub_visual
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
         exchange: "visual"
-        binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
-          - "visual.avoidance."
+        queue: "visual_avoidance_rk"
+        handler:
     - pub_sub_3: &sub_rmt_robot
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
         exchange: "rmt_robot"
-        binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
-          - "rmt.robot."
+        queue: "rmt_robot_rk"
+        handler: "robot_msg_handler"
     - pub_sub_4: &pub_control_robot
         type: "amq"
         broker: *amq_connect_info
         credential: *amq_credential
         exchange: "control_robot"
-        binding_keys: # Default Queue Logic will be: <binding_key>.robot.<id>
-          - "control.robot."
+        queue: "control_robot_rk"
+        handler:
   workareas:
     - workspace: *workspace_1
       protocol:
@@ -315,8 +319,8 @@ collision_avoidance:
         subscribers:
           - *sub_rmt_robot
           - *sub_plm
-      personnels:
-        - attribute: *attribute
+      personnel:
+        attribute: *attribute
 
 #        - id: '1'
 ##          height: 1.6
