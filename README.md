@@ -35,10 +35,9 @@ Python Package to avoid fatal collision between human and robot in virtual envir
 Run `collision-avoidance` binary in command line:
 
 - -c : Configuration file path
-- -i : ID of the personnel
 
 ```bash
-$ collision-avoidance -c config.yaml -i <personnel-id>
+$ collision-avoidance -c config.yaml 
 ```
 
 ### Message Broker (RabbitMQ)
@@ -58,7 +57,7 @@ __NOTE__: The `rabbitmqtt` stack needs an external docker network called `iotsta
 2. To run the Application along with the RabbitMQ Broker connect the container with the `iotstack` network using:
 
     ```bash
-    $ docker run --rm --network=iotstack -t pycollisionavoidance:<version> -c config.yaml -i <personnel-id>
+    $ docker run --rm --network=iotstack -t pycollisionavoidance:<version> -c config.yaml 
     ```
 
     __INFO__: Change the broker address in the `config.yaml` file to `rabbitmq` (name of the RabbitMQ Container in _rabbitmqtt_ stack)
@@ -66,5 +65,5 @@ __NOTE__: The `rabbitmqtt` stack needs an external docker network called `iotsta
 3. To run the a custom configuration for the Container use:
 
     ```bash
-    $ docker run --rm -v $(pwd)/config.yaml:/pycollisionavoidance/config.yaml --network=iotstack -t pycollisionavoidance:<version> -c config.yaml -i <personnel-id>
+    $ docker run --rm -v $(pwd)/config.yaml:/pycollisionavoidance/config.yaml --network=iotstack -t pycollisionavoidance:<version> -c config.yaml 
     ```
