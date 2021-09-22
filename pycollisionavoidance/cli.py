@@ -25,7 +25,8 @@ is_sighup_received = False
 def parse_arguments():
     """Arguments to run the script"""
     parser = argparse.ArgumentParser(description='Collision Avoidance')
-    parser.add_argument('--config', '-c', required=True, help= 'YAML Configuration File for Collision Avoidance with path')
+    parser.add_argument('--config', '-c', required=True,
+                        help='YAML Configuration File for Collision Avoidance with path')
     return parser.parse_args()
 
 
@@ -50,9 +51,9 @@ async def app(eventloop, config):
         logger.debug("Collision Avoidance Version: %s", walk_config['version'])
 
         # health server
-        health_server = HealthServer(config=walk_config["health_server"],event_loop=eventloop)
-	eventloop.create_task(health_server.server_loop())
-	
+        health_server = HealthServer(config=walk_config["health_server"], event_loop=eventloop)
+        eventloop.create_task(health_server.server_loop())
+
         try:
             update_interval = walk_config["update_interval"]
             assert type(update_interval) is int or type(update_interval) is float
@@ -106,4 +107,3 @@ def app_main():
     event_loop = asyncio.get_event_loop()
     event_loop.add_signal_handler(signal.SIGHUP, functools.partial(signal_handler, name='SIGHUP'))
     event_loop.run_until_complete(app(eventloop=event_loop, config=args.config))
-
