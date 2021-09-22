@@ -282,6 +282,9 @@ collision_avoidance:
     credentials: &amq_credential
       username: "admin"
       password: "rabbit"
+  health_server_info: &health_server_info
+    port: "9012"
+  health_server: *health_server_info
   pub_sub:
     - pub_sub_1: &sub_plm
         type: "amq"

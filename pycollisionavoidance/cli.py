@@ -7,6 +7,7 @@ import signal
 import functools
 import yaml
 from pycollisionavoidance.collision.Avoidance import CollisionAvoidance
+from pycollisionavoidance.health import HealthServer
 
 logging.basicConfig(level=logging.WARNING, format='%(levelname)-8s [%(filename)s:%(lineno)d] %(message)s')
 
@@ -47,6 +48,10 @@ async def app(eventloop, config):
             break
 
         logger.debug("Collision Avoidance Version: %s", walk_config['version'])
+
+        # health server
+        health_server = HealthServer(config=walk_config["health_server"],event_loop=eventloop)
+
         try:
             update_interval = walk_config["update_interval"]
             assert type(update_interval) is int or type(update_interval) is float
@@ -69,6 +74,8 @@ async def app(eventloop, config):
         while not is_sighup_received:
             for ws in workspace_collection:
                 await ws.update()
+
+            await health_server.server_loop()
             await asyncio.sleep(delay=update_interval)
         # If SIGHUP Occurs, Delete the instances
         for entry in workspace_collection:
