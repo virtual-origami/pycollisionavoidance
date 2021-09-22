@@ -51,7 +51,8 @@ async def app(eventloop, config):
 
         # health server
         health_server = HealthServer(config=walk_config["health_server"],event_loop=eventloop)
-
+	eventloop.create_task(health_server.server_loop())
+	
         try:
             update_interval = walk_config["update_interval"]
             assert type(update_interval) is int or type(update_interval) is float
@@ -75,7 +76,6 @@ async def app(eventloop, config):
             for ws in workspace_collection:
                 await ws.update()
 
-            await health_server.server_loop()
             await asyncio.sleep(delay=update_interval)
         # If SIGHUP Occurs, Delete the instances
         for entry in workspace_collection:
