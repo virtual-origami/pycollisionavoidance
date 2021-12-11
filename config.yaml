@@ -216,7 +216,7 @@ scene:
         obstacles: *obstacles_2
         robots: *robots
 collision_avoidance:
-  version: "0.1"
+  version: "0.3"
   update_interval: 0.1
   attribute: &attribute
     walk:
@@ -277,11 +277,11 @@ collision_avoidance:
         robot: 50
   amq: # AMQP Broker Information
     broker: &amq_connect_info
-      address: "rabbitmq"
+      address: ${RABBITMQ}
       port: 5672
     credentials: &amq_credential
-      username: "admin"
-      password: "rabbit"
+      username: ${RABBITMQ_USERNAME}
+      password: ${RABBITMQ_PASSWORD}
   health_server_info: &health_server_info
     port: "9012"
   health_server: *health_server_info
