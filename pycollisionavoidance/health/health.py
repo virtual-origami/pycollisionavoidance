@@ -12,6 +12,7 @@ class HealthServer:
         self.host = ""
         self.port = int(config["port"])
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((self.host, self.port))
         self.server.listen(8)
         self.server.setblocking(False)
@@ -20,8 +21,18 @@ class HealthServer:
     @staticmethod
     async def handle_client(client):
         loop = asyncio.get_event_loop()
-        response = 'OK\n'
-        await loop.sock_sendall(client, response.encode('utf8'))
+        response_body = 'collision avoidance is healthy'
+        response_headers = {
+            'Content-Type': 'text/plain; encoding=utf-8',
+            'Content-Length': len(response_body),
+            'Connection:': 'close',
+        }
+        response_headers_raw = ''.join(f'{k}: {v}\r\n' for k, v in response_headers.items())
+        response_protocol = 'HTTP/1.1'
+        response_status = '200'
+        response_status_text = 'OK'
+        response = f'{response_protocol} {response_status} {response_status_text}\r\n{response_headers_raw}\r\n{response_body}'.encode('utf-8')
+        await loop.sock_sendall(client, response)
         logger.debug("sent health status")
         client.close()
 
